@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZODYL-RÉACTION — Système TFA</title>
+    <style>
+        @import url('https://googleapis.com');
+
+        :root {
+            --bg-dark: #030206;
+            --neon-green: #26e600;
+            --neon-pink: #d500f9;
+            --card-border: rgba(213, 0, 249, 0.25);
+            --font-special: 'Orbitron', sans-serif;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: var(--font-mono);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* ========================================================
+           1. SPLASH SCREEN D'ACCÈS (WALHALLA)
+           ======================================================== */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.95)), url('walhalla.JPG') center/cover no-repeat;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 3000; transition: opacity 0.6s ease, visibility 0.6s; text-align: center; padding: 20px;
+        }
+        #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .splash-title-1 { font-family: var(--font-special); font-size: 3rem; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 20px var(--neon-pink); margin-bottom: 15px; }
+        .splash-title-2 { font-family: var(--font-special); font-size: 1rem; color: #ff3366; letter-spacing: 2px; font-weight: 700; margin-bottom: 50px; line-height: 1.6; max-width: 500px; }
+        .btn-enter { font-family: var(--font-special); padding: 15px 40px; font-size: 1.1rem; font-weight: bold; color: #fff; background: transparent; border: 2px solid var(--neon-pink); border-radius: 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px rgba(213, 0, 249, 0.3); transition: all 0.3s; }
+        .btn-enter:hover { background: var(--neon-pink); box-shadow: 0 0 30px var(--neon-pink); transform: scale(1.05); }
+
+        /* ========================================================
+           2. MENU PARAMÈTRES (HAUT À DROITE)
+           ======================================================== */
+        .settings-container { position: absolute; top: 25px; right: 25px; z-index: 1000; }
+        .settings-toggle { background: rgba(0,0,0,0.6); border: 1px solid var(--neon-pink); color: #fff; font-size: 1.1rem; padding: 8px; border-radius: 50%; cursor: pointer; }
+        .settings-dropdown { display: none; position: absolute; top: 45px; right: 0; width: 280px; background: rgba(12, 10, 16, 0.98); border: 1px solid var(--card-border); border-radius: 8px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+        .settings-dropdown.active { display: block; }
+        .settings-dropdown h4 { font-family: var(--font-special); font-size: 0.8rem; color: var(--neon-pink); margin-bottom: 10px; border-bottom: 1px solid var(--card-border); padding-bottom: 4px; }
+        .settings-dropdown label { display: block; font-size: 0.75rem; color: #a0a0b0; margin: 8px 0 4px 0; }
+        .settings-dropdown select, .settings-dropdown input { width: 100%; padding: 10px; background: #000; border: 1px solid rgba(255,255,255,0.1); color: #fff; border-radius: 4px; font-size: 0.85rem; margin-bottom: 10px; }
+        .btn-link-bot { width: 100%; padding: 10px; background: var(--neon-pink); color: #fff; font-family: var(--font-special); font-size: 0.8rem; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* ========================================================
+           3. APPLICATION INTERFACE PRINCIPALE
+           ======================================================== */
+        .app-container { width: 100%; max-width: 420px; margin: 40px auto; padding: 20px; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .app-title { font-family: var(--font-special); font-size: 2.3rem; font-weight: 900; letter-spacing: 2px; text-align: center; margin-bottom: 30px; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+
+        .main-panel { width: 100%; background: rgba(14, 11, 20, 0.65); border: 1px solid var(--card-border); border-radius: 16px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .input-label { display: block; font-family: var(--font-special); font-size: 0.85rem; font-weight: 700; color: #3dfc03; letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase; }
+        .input-label.pink-lbl { color: #f50057; margin-top: 10px; }
+
+        .url-box { width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: #fff; font-size: 0.95rem; font-family: var(--font-mono); margin-bottom: 25px; }
+        .qty-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .qty-select { width: 100px; padding: 10px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #fff; font-size: 1rem; font-family: var(--font-mono); }
+
+        .emoji-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 30px; }
+        .emoji-btn { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; font-size: 1.8rem; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.2s; }
+        .emoji-btn.selected { background: rgba(213, 0, 249, 0.15); border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(213, 0, 249, 0.3); }
+
+        .btn-action { width: 100%; padding: 16px; background: var(--neon-green); border: none; border-radius: 12px; color: #000; font-family: var(--font-special); font-size: 1.2rem; font-weight: 900; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 20px rgba(38, 230, 0, 0.4); }
+
+        .circle-area { width: 100%; display: flex; justify-content: center; margin: 40px 0 25px 0; }
+        .magic-ring {
+            width: 150px; height: 150px; border-radius: 50%; border: 4px solid transparent;
+            background: linear-gradient(var(--bg-dark), var(--bg-dark)) padding-box, linear-gradient(135deg, #00f0ff, #d500f9, #26e600) border-box;
+            box-shadow: 0 0 30px rgba(213, 0, 249, 0.2); position: relative; display: flex; justify-content: center; align-items: center;
+        }
+        .magic-ring.animating { animation: spinRing 2s linear infinite; }
+        @keyframes spinRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .inner-emoji { position: absolute; font-size: 2.2rem; }
+        .coupling-code-txt { position: absolute; font-family: var(--font-special); font-size: 1.2rem; font-weight: 900; color: #00f0ff; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0,240,255,0.4); text-align: center; width: 100%; padding: 5px; }
+
+        .counter-box { font-family: var(--font-special); font-size: 2.2rem; font-weight: 900; color: var(--neon-green); text-shadow: 0 0 15px rgba(38,230,0,0.3); text-align: center; margin-bottom: 15px; }
+        .progress-track { width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { width: 0%; height: 100%; background: var(--neon-green); box-shadow: 0 0 12px var(--neon-green); }
+        .percentage-txt { font-size: 0.8rem; color: #606070; }
+
+        footer { width: 100%; margin-top: auto; padding: 30px 0; text-align: center; }
+        .footer-sig { font-family: var(--font-special); font-size: 0.75rem; font-weight: 700; color: #a0a0b0; letter-spacing: 2px; text-transform: uppercase; }
+        .barcode { display: inline-flex; background: #ffffff; padding: 4px 12px; border-radius: 1px; height: 32px; align-items: center; margin-top: 10px; }
+        .bar { width: 2px; height: 24px; background: #000; margin-right: 1px; }
+        .bar.thin { width: 1px; } .bar.thick { width: 4px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SPLASH SCREEN (WALHALLA) -->
+    <div id="splash-screen">
+        <div class="splash-title-1">BAJI D JAP</div>
+        <div class="splash-title-2">L’ANGE SANS TÊTE…LE PÊCHER DE L’AVARICE</div>
+        <button class="btn-enter" onclick="document.getElementById('splash-screen').classList.add('hidden')">SYSTÈME ZODYL</button>
+    </div>
+
+    <!-- 2. BOUTON PARAMÈTRES ET CONFIGURATION DU NUMÉRO -->
+    <div class="settings-container">
+        <button class="settings-toggle" onclick="document.getElementById('set-box').classList.toggle('active')">⚙️</button>
+        <div class="settings-dropdown" id="set-box">
+            <h4>[ CONNEXION DU BOT ]</h4>
+            <label>Indicatif Pays (ex: 243, 212 237, 242, 255, 236, 33, 221, 241) :</label>
+            <input type="text" id="bot-country" placeholder="243" value="243">
+            <label>Numéro de carte SIM secondaire :</label>
+            <input type="text" id="bot-phone" placeholder="812345678">
+            <button class="btn-link-bot" onclick="genererCodeLiaison()">GÉNÉRER LE CODE</button>
+        </div>
+    </div>
+
+    <!-- 3. CONTENU PRINCIPAL DE L'APPLICATION MOBILE -->
+    <div class="app-container">
+        <h1 class="app-title">ZODYL-RÉACTION</h1>
+
+        <div class="main-panel">
+            <label class="input-label">Link de la chaîne</label>
+            <input type="text" class="url-box" id="url-target" placeholder="https://whatsapp.com...">
+
+<script>
+        let emojiSelectionne = "🧡";
+        let sessionEstConnectee = false;
+
+        // Connexion au flux en temps réel du serveur Render
+        const sourceEvenements = new EventSource('/api/flux-statut');
+        sourceEvenements.onmessage = function(event) {
+            const donnees = JSON.parse(event.data);
+            const counterTxt = document.getElementById('txt-counter');
+            const ring = document.getElementById('ring-container');
+
+            if (donnees.statut === "ATTENTE_CODE" && donnees.code) {
+                sessionEstConnectee = false;
+                ring.innerHTML = `<div class="coupling-code-txt">${donnees.code}</div>`;
+                counterTxt.innerText = "ENTREZ LE CODE";
+                counterTxt.style.color = "#00f0ff";
+            } else if (donnees.statut === "CONNECTÉ") {
+                sessionEstConnectee = true;
+                ring.innerHTML = `<div class="inner-emoji" id="sphere-emoji">${emojiSelectionne}</div>`;
+                counterTxt.innerText = "BOT PRÊT";
+                counterTxt.style.color = "var(--neon-green)";
+            }
+        };
+
+        // Demande du code à 8 chiffres au backend
+        async function genererCodeLiaison() {
+            const country = document.getElementById('bot-country').value.trim();
+            const phone = document.getElementById('bot-phone').value.trim();
+            if(!phone) { alert("Saisissez le numéro secondaire."); return; }
+
+            document.getElementById('txt-counter').innerText = "GÉNÉRATION...";
+
+            try {
+                await fetch('/api/demander-code-liaison', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: country + phone })
+                });
+                document.getElementById('set-box').classList.remove('active');
+            } catch(e) { alert("Erreur serveur."); }
+        }
+
+        function selectEmoji(bouton, caractere) {
+            document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+            bouton.classList.add('selected');
+            emojiSelectionne = caractere;
+            const emojiEl = document.getElementById('sphere-emoji');
+            if(emojiEl) emojiEl.innerText = caractere;
+        }
+
+        async function lancerTraitementTFA() {
+            if(!sessionEstConnectee) { alert("Le bot n'est pas lié. Allez dans les paramètres et générez un code."); return; }
+            const link = document.getElementById('url-target').value.trim();
+            const qty = parseInt(document.getElementById('qty-target').value);
+            const ring = document.getElementById('ring-container');
+            const bar = document.getElementById('bar-fill');
+            const counterTxt = document.getElementById('txt-counter');
+            const pctTxt = document.getElementById('txt-pct');
+
+            if(!link) { alert("Collez un lien valide."); return; }
+
+            ring.classList.add('animating');
+            counterTxt.innerText = `0 / ${qty}`;
+
+            try {
+                const reponse = await fetch('/api/injecter-reactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lien: link, emoji: emojiSelectionne, quantite: qty })
+                });
+                const data = await reponse.json();
+
+                if(!data.success) { alert(data.error); ring.classList.remove('animating'); return; }
+
+                let progression = 0;
+                const intervalle = setInterval(() => {
+                    if (progression < qty) {
+                        progression++;
+                        const pourcentage = Math.floor((progression / qty) * 100);
+                        counterTxt.innerText = `${progression} / ${qty}`;
+                        bar.style.width = `${pourcentage}%`;
+                        pctTxt.innerText = `${pourcentage}%`;
+                    } else {
+                        clearInterval(intervalle);
+                        ring.classList.remove('animating');
+                        alert("Injection réussie !");
+                    }
+                }, 100);
+            } catch (err) { ring.classList.remove('animating'); }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
